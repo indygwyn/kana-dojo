@@ -424,6 +424,7 @@
   <div class="includes">
     <label><input type="checkbox" id="incDakuten"> Dakuten / Handakuten</label>
     <label><input type="checkbox" id="incYoon"> Combinations (Yōon)</label>
+    <label><input type="checkbox" id="incAudio" checked> Audio</label>
   </div>
 
   <div class="view-toggle">
@@ -754,6 +755,13 @@ function showCard() {
   inputEl.focus();
 }
 
+function speakKana(kana) {
+  if (!document.getElementById('incAudio').checked) return;
+  const utterance = new SpeechSynthesisUtterance(kana);
+  utterance.lang = 'ja-JP';
+  speechSynthesis.speak(utterance);
+}
+
 function revealHint() {
   if (hintShown) return;
   hintShown = true;
@@ -762,6 +770,7 @@ function revealHint() {
   hintRomaji.textContent = currentAnswer;
   hintMnemonic.textContent = getMnemonic(currentKana, currentAnswer);
   hintContent.classList.add('visible');
+  speakKana(currentKana);
   inputEl.focus();
 }
 
