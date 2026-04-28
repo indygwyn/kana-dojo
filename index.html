@@ -797,11 +797,13 @@ function submit() {
     correct++;
     streak++;
     flash('correct');
+    speakKana(currentKana);
     updateStats();
     showCard();
   } else {
     streak = 0;
     flash('wrong');
+    speakKana(currentKana);
     feedbackEl.textContent = `${currentKana} = ${currentAnswer}`;
     // Also show the mnemonic on wrong answer so they learn
     hintBtn.style.display = 'none';
