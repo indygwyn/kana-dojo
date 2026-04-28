@@ -784,6 +784,19 @@ let locked = false;
 let hintShown = false;
 let hintUsedThisRound = false;
 
+// Per-kana score: positive = strong, negative = weak. Persisted in localStorage.
+let kanaScores = JSON.parse(localStorage.getItem('kanaScores') || '{}');
+
+function recordResult(kana, wasCorrect) {
+  kanaScores[kana] = (kanaScores[kana] || 0) + (wasCorrect ? 1 : -1);
+  localStorage.setItem('kanaScores', JSON.stringify(kanaScores));
+}
+
+function weightFor(kana) {
+  const s = kanaScores[kana] || 0;
+  return Math.max(1, 6 - s);
+}
+
 // ============================================================
 // DOM REFS
 // ============================================================
@@ -825,9 +838,15 @@ function getPool() {
 
 function pickRandom() {
   const pool = getPool();
-  const keys = Object.keys(pool);
-  let next;
-  do { next = keys[Math.floor(Math.random() * keys.length)]; } while (next === currentKana && keys.length > 1);
+  const keys = Object.keys(pool).filter(k => k !== currentKana || Object.keys(pool).length === 1);
+  const weights = keys.map(k => weightFor(k));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  let next = keys[keys.length - 1];
+  for (let i = 0; i < keys.length; i++) {
+    r -= weights[i];
+    if (r <= 0) { next = keys[i]; break; }
+  }
   currentKana = next;
   currentAnswer = pool[next];
 }
@@ -860,6 +879,7 @@ function handleChoice(choice, btn, choicesRow) {
     btn.classList.add('correct');
     correct++;
     streak++;
+    recordResult(currentKana, true);
     speakKana(currentKana);
     updateStats();
     locked = true;
@@ -867,6 +887,7 @@ function handleChoice(choice, btn, choicesRow) {
   } else {
     btn.classList.add('wrong');
     streak = 0;
+    recordResult(currentKana, false);
     speakKana(currentKana);
     choicesRow.querySelectorAll('.choice-btn').forEach(b => {
       if (b.textContent === currentAnswer) b.classList.add('reveal');
@@ -934,12 +955,14 @@ function submit() {
   if (guess === currentAnswer) {
     correct++;
     streak++;
+    recordResult(currentKana, true);
     flash('correct');
     speakKana(currentKana);
     updateStats();
     showCard();
   } else {
     streak = 0;
+    recordResult(currentKana, false);
     flash('wrong');
     speakKana(currentKana);
     feedbackEl.textContent = `${currentKana} = ${currentAnswer}`;
