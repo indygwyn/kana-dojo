@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
 <title>Kana Dojo</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -409,6 +409,62 @@
   .cheat-table .ct-hira, .cheat-table .ct-kata {
     font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
     font-size: 1.1rem;
+  }
+
+  /* ====== MOBILE ====== */
+  @media (max-width: 600px) {
+    body {
+      padding-top: 0;
+      align-items: stretch;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .app {
+      padding: 0.75rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    h1 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+
+    .modes { margin-bottom: 0.4rem; }
+    .modes button, .view-toggle button { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+    .includes { gap: 0.8rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
+
+    .view-toggle { margin-bottom: 0.75rem; }
+
+    .drill-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      min-height: 0;
+    }
+
+    .kana { font-size: 6rem; }
+
+    .hint-area { min-height: 2.8rem; margin-bottom: 0.5rem; }
+
+    #answer { font-size: 1.2rem; width: 160px; }
+
+    .stats { margin-top: 0.6rem; font-size: 0.9rem; }
+
+    .shortcut-hint { display: none; }
+
+    .cheatsheet-btn { bottom: 0.75rem; right: 0.75rem; }
   }
 </style>
 </head>
