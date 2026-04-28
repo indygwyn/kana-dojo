@@ -112,6 +112,7 @@
     margin-bottom: 0.2rem;
     font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
     user-select: none;
+    cursor: pointer;
   }
 
   .feedback {
@@ -891,6 +892,9 @@ document.getElementById('sdClose').addEventListener('click', () => {
 
 // Hint button click
 hintBtn.addEventListener('click', revealHint);
+
+// Tap/click the kana character to reveal hint (mobile-friendly)
+kanaEl.addEventListener('click', revealHint);
 
 // Keyboard
 inputEl.addEventListener('keydown', e => {
