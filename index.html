@@ -411,6 +411,33 @@
     font-size: 1.1rem;
   }
 
+  /* ====== MULTIPLE CHOICE ====== */
+  .choices-row {
+    display: none;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .choice-btn {
+    padding: 0.75rem 1.4rem;
+    font-size: 1.2rem;
+    border: 2px solid #3a3a5c;
+    border-radius: 10px;
+    background: #16213e;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 80px;
+    letter-spacing: 0.05em;
+  }
+
+  .choice-btn:hover { border-color: #6c63ff; }
+  .choice-btn.correct { background: #4ecca3; border-color: #4ecca3; color: #111; }
+  .choice-btn.wrong   { background: #e74c3c; border-color: #e74c3c; color: #fff; }
+  .choice-btn.reveal  { background: #4ecca3; border-color: #4ecca3; color: #111; }
+
   /* ====== MOBILE ====== */
   @media (max-width: 600px) {
     body {
@@ -458,7 +485,11 @@
 
     .hint-area { min-height: 2.8rem; margin-bottom: 0.5rem; }
 
-    #answer { font-size: 1.2rem; width: 160px; }
+    #answer { display: none; }
+    .hint-area { display: none; }
+    .choices-row { display: flex; }
+
+    .kana { font-size: 5rem; }
 
     .stats { margin-top: 0.6rem; font-size: 0.9rem; }
 
@@ -504,6 +535,7 @@
       <div class="input-row">
         <input id="answer" type="text" autocomplete="off" autofocus placeholder="romaji">
       </div>
+      <div class="choices-row" id="choicesRow"></div>
     </div>
 
     <div class="stats">
@@ -800,16 +832,65 @@ function pickRandom() {
   currentAnswer = pool[next];
 }
 
+function isMobile() {
+  return window.matchMedia('(max-width: 600px)').matches;
+}
+
+function buildChoices() {
+  const choicesRow = document.getElementById('choicesRow');
+  while (choicesRow.firstChild) choicesRow.removeChild(choicesRow.firstChild);
+  const pool = getPool();
+  const allAnswers = Object.values(pool).filter(a => a !== currentAnswer);
+  const wrong = allAnswers.sort(() => Math.random() - 0.5).slice(0, 2);
+  const choices = [currentAnswer, ...wrong].sort(() => Math.random() - 0.5);
+
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice;
+    btn.addEventListener('click', () => handleChoice(choice, btn, choicesRow));
+    choicesRow.appendChild(btn);
+  });
+}
+
+function handleChoice(choice, btn, choicesRow) {
+  if (locked) return;
+  total++;
+  if (choice === currentAnswer) {
+    btn.classList.add('correct');
+    correct++;
+    streak++;
+    speakKana(currentKana);
+    updateStats();
+    locked = true;
+    setTimeout(() => { locked = false; showCard(); }, 600);
+  } else {
+    btn.classList.add('wrong');
+    streak = 0;
+    speakKana(currentKana);
+    choicesRow.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent === currentAnswer) b.classList.add('reveal');
+    });
+    updateStats();
+    locked = true;
+    setTimeout(() => { locked = false; showCard(); }, 1500);
+  }
+}
+
 function showCard() {
   pickRandom();
   kanaEl.textContent = currentKana;
   feedbackEl.textContent = '';
-  inputEl.value = '';
   hintShown = false;
   hintUsedThisRound = false;
-  hintBtn.style.display = '';
-  hintContent.classList.remove('visible');
-  inputEl.focus();
+  if (isMobile()) {
+    buildChoices();
+  } else {
+    inputEl.value = '';
+    hintBtn.style.display = '';
+    hintContent.classList.remove('visible');
+    inputEl.focus();
+  }
 }
 
 function speakKana(kana) {
