@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kana Dojo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 520px;
+    padding: 1rem 1.5rem 2rem;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #f0f0f0;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- Kana set toggle --- */
+  .modes {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .modes button, .view-toggle button {
+    padding: 0.4rem 0.9rem;
+    border: 2px solid #3a3a5c;
+    border-radius: 6px;
+    background: transparent;
+    color: #b0b0c8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .modes button:hover, .view-toggle button:hover { border-color: #6c63ff; color: #d0d0e8; }
+  .modes button.active { background: #6c63ff; border-color: #6c63ff; color: #fff; }
+
+  /* --- Include checkboxes --- */
+  .includes {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .includes label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: #8888aa;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .includes input[type="checkbox"] {
+    accent-color: #6c63ff;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+  }
+
+  /* --- View toggle (Drill / Study) --- */
+  .view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .view-toggle button.active { background: #4ecca3; border-color: #4ecca3; color: #111; }
+
+  /* ====== DRILL VIEW ====== */
+  .drill-view { display: block; }
+  .drill-view.hidden, .study-view.hidden { display: none; }
+
+  .card {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 2rem 1rem 1.8rem;
+    margin-bottom: 1.2rem;
+    position: relative;
+    transition: box-shadow 0.3s;
+  }
+
+  .card.correct { box-shadow: 0 0 0 3px #4ecca3, 0 0 30px rgba(78, 204, 163, 0.25); }
+  .card.wrong   { box-shadow: 0 0 0 3px #e74c3c, 0 0 30px rgba(231, 76, 60, 0.25); }
+
+  .kana {
+    font-size: 7rem;
+    line-height: 1.1;
+    margin-bottom: 0.2rem;
+    font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
+    user-select: none;
+  }
+
+  .feedback {
+    font-size: 0.95rem;
+    color: #e74c3c;
+    min-height: 1.4em;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  /* Hint area */
+  .hint-area {
+    min-height: 3.2rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .hint-btn {
+    padding: 0.35rem 1.2rem;
+    border: 1px solid #3a3a5c;
+    border-radius: 6px;
+    background: transparent;
+    color: #8888aa;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hint-btn:hover { border-color: #6c63ff; color: #c0c0d8; }
+
+  .hint-content {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .hint-content.visible { display: flex; }
+
+  .hint-romaji {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #f0c040;
+    letter-spacing: 0.05em;
+  }
+
+  .hint-mnemonic {
+    font-size: 0.85rem;
+    color: #a0a0c0;
+    font-style: italic;
+    max-width: 320px;
+    line-height: 1.4;
+  }
+
+  .input-row {
+    display: flex;
+    justify-content: center;
+  }
+
+  #answer {
+    width: 180px;
+    padding: 0.6rem 1rem;
+    font-size: 1.3rem;
+    text-align: center;
+    border: 2px solid #3a3a5c;
+    border-radius: 8px;
+    background: #0f1a30;
+    color: #f0f0f0;
+    outline: none;
+    transition: border-color 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  #answer:focus { border-color: #6c63ff; }
+
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #8888aa;
+  }
+
+  .stats span { font-weight: 600; color: #c0c0d8; }
+
+  .shortcut-hint {
+    margin-top: 0.8rem;
+    font-size: 0.75rem;
+    color: #555577;
+  }
+
+  /* ====== STUDY VIEW ====== */
+  .study-view {
+    text-align: left;
+  }
+
+  .study-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .study-section h2 {
+    font-size: 1rem;
+    color: #8888aa;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid #2a2a4c;
+    padding-bottom: 0.3rem;
+  }
+
+  .study-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .study-card {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 0.6rem 0.4rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .study-card:hover { border-color: #6c63ff; transform: translateY(-1px); }
+
+  .study-card .sc-kana {
+    font-size: 2rem;
+    font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
+  }
+
+  .study-card .sc-romaji {
+    font-size: 0.8rem;
+    color: #f0c040;
+    font-weight: 600;
+    margin-top: 0.15rem;
+  }
+
+  .study-card .sc-mnemonic {
+    font-size: 0.65rem;
+    color: #7777aa;
+    font-style: italic;
+    margin-top: 0.15rem;
+    line-height: 1.3;
+    min-height: 2em;
+  }
+
+  /* Expanded study card detail */
+  .study-detail {
+    display: none;
+    background: #16213e;
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 2px solid #6c63ff;
+  }
+
+  .study-detail.visible { display: block; }
+
+  .study-detail .sd-kana {
+    font-size: 5rem;
+    font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
+    line-height: 1.1;
+  }
+
+  .study-detail .sd-romaji {
+    font-size: 1.6rem;
+    color: #f0c040;
+    font-weight: 700;
+    margin: 0.3rem 0;
+  }
+
+  .study-detail .sd-mnemonic {
+    font-size: 0.95rem;
+    color: #a0a0c0;
+    font-style: italic;
+    line-height: 1.5;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .study-detail .sd-close {
+    margin-top: 0.8rem;
+    padding: 0.3rem 1rem;
+    border: 1px solid #3a3a5c;
+    border-radius: 6px;
+    background: transparent;
+    color: #8888aa;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+
+  .study-detail .sd-close:hover { border-color: #6c63ff; color: #d0d0e8; }
+
+  /* ====== CHEATSHEET MODAL ====== */
+  .cheatsheet-btn {
+    position: fixed;
+    bottom: 1.2rem;
+    right: 1.2rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid #3a3a5c;
+    border-radius: 8px;
+    background: #16213e;
+    color: #b0b0c8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.15s;
+  }
+
+  .cheatsheet-btn:hover { border-color: #6c63ff; color: #d0d0e8; background: #1e2a4a; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 25, 0.92);
+    z-index: 200;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+  }
+
+  .modal-overlay.visible { display: block; }
+
+  .modal {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #16213e;
+    border-radius: 14px;
+    padding: 1.5rem;
+    position: relative;
+  }
+
+  .modal h2 {
+    font-size: 1.2rem;
+    color: #f0f0f0;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .modal .close-btn {
+    position: absolute;
+    top: 0.8rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #8888aa;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal .close-btn:hover { color: #e0e0e0; }
+
+  .cheat-section-title {
+    font-size: 0.85rem;
+    color: #8888aa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 1.2rem 0 0.4rem;
+    border-bottom: 1px solid #2a2a4c;
+    padding-bottom: 0.25rem;
+  }
+
+  .cheat-section-title:first-child { margin-top: 0; }
+
+  .cheat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .cheat-table th {
+    text-align: center;
+    color: #8888aa;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.2rem;
+    border-bottom: 1px solid #2a2a4c;
+  }
+
+  .cheat-table td {
+    text-align: center;
+    padding: 0.35rem 0.2rem;
+    border-bottom: 1px solid #1a1a3c;
+  }
+
+  .cheat-table .ct-romaji { color: #f0c040; font-weight: 600; }
+  .cheat-table .ct-hira, .cheat-table .ct-kata {
+    font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
+    font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Kana Dojo</h1>
+
+  <div class="modes">
+    <button class="active" data-mode="hiragana">Hiragana</button>
+    <button data-mode="katakana">Katakana</button>
+    <button data-mode="both">Both</button>
+  </div>
+
+  <div class="includes">
+    <label><input type="checkbox" id="incDakuten"> Dakuten / Handakuten</label>
+    <label><input type="checkbox" id="incYoon"> Combinations (Yōon)</label>
+  </div>
+
+  <div class="view-toggle">
+    <button class="active" data-view="drill">Drill</button>
+    <button data-view="study">Study</button>
+  </div>
+
+  <!-- DRILL VIEW -->
+  <div class="drill-view" id="drillView">
+    <div class="card" id="card">
+      <div class="kana" id="kana"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="hint-area" id="hintArea">
+        <button class="hint-btn" id="hintBtn">Show Hint (Space)</button>
+        <div class="hint-content" id="hintContent">
+          <div class="hint-romaji" id="hintRomaji"></div>
+          <div class="hint-mnemonic" id="hintMnemonic"></div>
+        </div>
+      </div>
+      <div class="input-row">
+        <input id="answer" type="text" autocomplete="off" autofocus placeholder="romaji">
+      </div>
+    </div>
+
+    <div class="stats">
+      <div>Score: <span id="score">0 / 0</span></div>
+      <div>Streak: <span id="streak">0</span></div>
+    </div>
+    <div class="shortcut-hint">Space = hint &middot; Enter = submit</div>
+  </div>
+
+  <!-- STUDY VIEW -->
+  <div class="study-view hidden" id="studyView">
+    <div class="study-detail" id="studyDetail">
+      <div class="sd-kana" id="sdKana"></div>
+      <div class="sd-romaji" id="sdRomaji"></div>
+      <div class="sd-mnemonic" id="sdMnemonic"></div>
+      <button class="sd-close" id="sdClose">Close</button>
+    </div>
+    <div id="studyContent"></div>
+  </div>
+</div>
+
+<button class="cheatsheet-btn" id="cheatsheetBtn">Cheatsheet</button>
+
+<div class="modal-overlay" id="cheatModal">
+  <div class="modal">
+    <button class="close-btn" id="cheatClose">&times;</button>
+    <h2>Kana Cheatsheet</h2>
+    <div id="cheatBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// MNEMONICS — visual shape-based memory aids
+// ============================================================
+const MNEMONIC = {
+  // --- Hiragana base ---
+  'あ': 'Looks like an Antelope running — "Ah!"',
+  'い': 'Two eels standing side by side — "ee"',
+  'う': 'A mouth from the side saying "Oo"',
+  'え': 'An exotic bird with a fancy tail',
+  'お': 'A golfer swinging — "Oh, nice shot!"',
+  'か': 'A blade that can KA-t things',
+  'き': 'A skeleton KEY hanging on a hook',
+  'く': 'A CUCKoo bird\'s open beak',
+  'け': 'A KEg on its side with a tap',
+  'こ': 'Two worms — "KOme here, worms!"',
+  'さ': 'A man sitting cross-legged in a SAuna',
+  'し': 'A fiSHing hook dangling in water',
+  'す': 'A person on a SWing — "su-wing!"',
+  'せ': 'A hand reaching to SAY something',
+  'そ': 'A zigzag stitch — "SEW a zigzag"',
+  'た': 'The letters "t" and "a" mashed together',
+  'ち': 'A CHEerleader doing a high kick',
+  'つ': 'A TSUnami wave cresting',
+  'て': 'A dog wagging its TAIL — "teh"',
+  'と': 'A TOrnado touching down',
+  'な': 'A KNOt tied in a rope — "nah"',
+  'に': 'A person on their kNEEs',
+  'ぬ': 'Chopsticks picking up NOOdles',
+  'ね': 'A cat curled up (NEko = cat)',
+  'の': 'A "NO entry" swirl sign',
+  'は': 'A person laughing "HA HA!" with arms up',
+  'ひ': 'A smiling face saying "HEE hee!"',
+  'ふ': 'Mt. FUji with a trail of smoke',
+  'へ': 'A hill — "HEY, nice hill!"',
+  'ほ': 'A house for Santa — "HO ho ho!"',
+  'ま': 'A MAma with a baby on her back',
+  'み': 'Lucky number 3 with a tail (MI = three)',
+  'む': 'A cow\'s face — "MOO"',
+  'め': 'An eye spinning around (ME = eye)',
+  'も': 'A fishhook catching MOre fish',
+  'や': 'A YAk\'s head with horns',
+  'ゆ': 'A fish swimming — "what a Unique fish!"',
+  'よ': 'A person playing with a YO-yo',
+  'ら': 'A person RApidly running',
+  'り': 'Two REEds growing by a RIver',
+  'る': 'A kangaroo\'s tail makes a LOOP (RU)',
+  'れ': 'A person REaching out their hand',
+  'ろ': 'A ROad curving into the distance',
+  'わ': 'A swan on WAter',
+  'を': 'Like わ doing a trick — "WO-ah!"',
+  'ん': 'The eNd! Last character — looks like "n"',
+
+  // --- Katakana base ---
+  'ア': 'An AXe chopping — "Ah!"',
+  'イ': 'An Eagle\'s beak in profile',
+  'ウ': 'A whale spouting — "OO!"',
+  'エ': 'An Elevator going up and down',
+  'オ': 'An Opera singer hitting a note',
+  'カ': 'A blade that can KA-t (same idea, sharp angles)',
+  'キ': 'A KEY on a keychain',
+  'ク': 'A CUCKoo\'s angular beak',
+  'ケ': 'The letter "K" turned sideways',
+  'コ': 'A COrner — two walls of a box',
+  'サ': 'A SARdine with bones showing',
+  'シ': 'A smiley face winking ;) — "SHE smiled"',
+  'ス': 'A SKI slope going down',
+  'セ': 'A hand making a SET of gestures',
+  'ソ': 'Two drops falling — a "SO-da" splash',
+  'タ': 'Looks like "ta" in blocky script',
+  'チ': 'A CHurch steeple with a cross',
+  'ツ': 'Three drops of a TSUnami',
+  'テ': 'A TElephone pole with wires',
+  'ト': 'A TOtem pole — simple vertical post',
+  'ナ': 'A kNIfe blade at an angle',
+  'ニ': 'A kNEE — two horizontal lines',
+  'ヌ': 'Chopsticks twirling NOOdles',
+  'ネ': 'A NEt draped on a post',
+  'ノ': 'A long NOse in profile',
+  'ハ': 'A mouth wide open laughing "HA!"',
+  'ヒ': 'A person\'s mouth saying "HEE!"',
+  'フ': 'A mouth blowing air — "FOO!"',
+  'ヘ': 'A hill peak (same as hiragana へ)',
+  'ホ': 'A HOly cross with extra detail',
+  'マ': 'A MAsked face in profile',
+  'ミ': 'Three lines = three (MI = three)',
+  'ム': 'A cow\'s horns — "MOO"',
+  'メ': 'An X marks the eye (ME = eye)',
+  'モ': 'A fishnet catching MOre fish',
+  'ヤ': 'A YAk\'s angular horns',
+  'ユ': 'A U-turn sign — "YU-turn"',
+  'ヨ': 'A sideways book — "read it, YO!"',
+  'ラ': 'A RAptor claw grabbing',
+  'リ': 'A RIver — two lines flowing down',
+  'ル': 'Tree Roots going into the ground',
+  'レ': 'A REd carpet rolled out (or a razor)',
+  'ロ': 'A ROad sign — simple square',
+  'ワ': 'A Wine glass full of WAter',
+  'ヲ': 'Like ウ with a line — rare, WO',
+  'ン': 'Like シ tilted — the eNd',
+};
+
+// For dakuten/handakuten, generate systematic hints
+function getDakutenHint(kana, romaji) {
+  // Find if it's a dakuten (゛) or handakuten (゜) variant
+  if (romaji.startsWith('g'))  return `Add ゛ to the "k" row → voiced "g" sound: ${romaji}`;
+  if (romaji.startsWith('z') || romaji === 'ji' || romaji === 'zu')
+    return `Add ゛ to the "s" row → voiced "z" sound: ${romaji}`;
+  if (romaji.startsWith('d') || romaji === 'di' || romaji === 'du')
+    return `Add ゛ to the "t" row → voiced "d" sound: ${romaji}`;
+  if (romaji.startsWith('b'))  return `Add ゛ to the "h" row → voiced "b" sound: ${romaji}`;
+  if (romaji.startsWith('p'))  return `Add ゜ to the "h" row → popping "p" sound: ${romaji}`;
+  return `Modified base character → ${romaji}`;
+}
+
+// For yoon combinations, generate systematic hints
+function getYoonHint(kana, romaji) {
+  return `Combo: big char + small や/ゆ/よ → blend the sounds into "${romaji}"`;
+}
+
+function getMnemonic(kana, romaji) {
+  if (MNEMONIC[kana]) return MNEMONIC[kana];
+  // Check if it's a multi-char (yoon)
+  if (kana.length > 1) return getYoonHint(kana, romaji);
+  // Dakuten / handakuten
+  return getDakutenHint(kana, romaji);
+}
+
+// ============================================================
+// KANA DATA
+// ============================================================
+const HIRAGANA_BASE = {
+  'あ':'a','い':'i','う':'u','え':'e','お':'o',
+  'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+  'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+  'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+  'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+  'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+  'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+  'や':'ya','ゆ':'yu','よ':'yo',
+  'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+  'わ':'wa','を':'wo','ん':'n',
+};
+
+const HIRAGANA_DAKUTEN = {
+  'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+  'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+  'だ':'da','ぢ':'di','づ':'du','で':'de','ど':'do',
+  'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+  'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+};
+
+const HIRAGANA_YOON = {
+  'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
+  'しゃ':'sha','しゅ':'shu','しょ':'sho',
+  'ちゃ':'cha','ちゅ':'chu','ちょ':'cho',
+  'にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+  'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo',
+  'みゃ':'mya','みゅ':'myu','みょ':'myo',
+  'りゃ':'rya','りゅ':'ryu','りょ':'ryo',
+  'ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+  'じゃ':'ja','じゅ':'ju','じょ':'jo',
+  'びゃ':'bya','びゅ':'byu','びょ':'byo',
+  'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
+  'ぢゃ':'dya','ぢゅ':'dyu','ぢょ':'dyo',
+};
+
+const KATAKANA_BASE = {
+  'ア':'a','イ':'i','ウ':'u','エ':'e','オ':'o',
+  'カ':'ka','キ':'ki','ク':'ku','ケ':'ke','コ':'ko',
+  'サ':'sa','シ':'shi','ス':'su','セ':'se','ソ':'so',
+  'タ':'ta','チ':'chi','ツ':'tsu','テ':'te','ト':'to',
+  'ナ':'na','ニ':'ni','ヌ':'nu','ネ':'ne','ノ':'no',
+  'ハ':'ha','ヒ':'hi','フ':'fu','ヘ':'he','ホ':'ho',
+  'マ':'ma','ミ':'mi','ム':'mu','メ':'me','モ':'mo',
+  'ヤ':'ya','ユ':'yu','ヨ':'yo',
+  'ラ':'ra','リ':'ri','ル':'ru','レ':'re','ロ':'ro',
+  'ワ':'wa','ヲ':'wo','ン':'n',
+};
+
+const KATAKANA_DAKUTEN = {
+  'ガ':'ga','ギ':'gi','グ':'gu','ゲ':'ge','ゴ':'go',
+  'ザ':'za','ジ':'ji','ズ':'zu','ゼ':'ze','ゾ':'zo',
+  'ダ':'da','ヂ':'di','ヅ':'du','デ':'de','ド':'do',
+  'バ':'ba','ビ':'bi','ブ':'bu','ベ':'be','ボ':'bo',
+  'パ':'pa','ピ':'pi','プ':'pu','ペ':'pe','ポ':'po',
+};
+
+const KATAKANA_YOON = {
+  'キャ':'kya','キュ':'kyu','キョ':'kyo',
+  'シャ':'sha','シュ':'shu','ショ':'sho',
+  'チャ':'cha','チュ':'chu','チョ':'cho',
+  'ニャ':'nya','ニュ':'nyu','ニョ':'nyo',
+  'ヒャ':'hya','ヒュ':'hyu','ヒョ':'hyo',
+  'ミャ':'mya','ミュ':'myu','ミョ':'myo',
+  'リャ':'rya','リュ':'ryu','リョ':'ryo',
+  'ギャ':'gya','ギュ':'gyu','ギョ':'gyo',
+  'ジャ':'ja','ジュ':'ju','ジョ':'jo',
+  'ビャ':'bya','ビュ':'byu','ビョ':'byo',
+  'ピャ':'pya','ピュ':'pyu','ピョ':'pyo',
+  'ヂャ':'dya','ヂュ':'dyu','ヂョ':'dyo',
+};
+
+// ============================================================
+// APP STATE
+// ============================================================
+let mode = 'hiragana';
+let view = 'drill';
+let correct = 0;
+let total = 0;
+let streak = 0;
+let currentKana = '';
+let currentAnswer = '';
+let locked = false;
+let hintShown = false;
+let hintUsedThisRound = false;
+
+// ============================================================
+// DOM REFS
+// ============================================================
+const cardEl       = document.getElementById('card');
+const kanaEl       = document.getElementById('kana');
+const feedbackEl   = document.getElementById('feedback');
+const hintBtn      = document.getElementById('hintBtn');
+const hintContent  = document.getElementById('hintContent');
+const hintRomaji   = document.getElementById('hintRomaji');
+const hintMnemonic = document.getElementById('hintMnemonic');
+const inputEl      = document.getElementById('answer');
+const scoreEl      = document.getElementById('score');
+const streakEl     = document.getElementById('streak');
+const drillView    = document.getElementById('drillView');
+const studyView    = document.getElementById('studyView');
+const studyContent = document.getElementById('studyContent');
+const studyDetail  = document.getElementById('studyDetail');
+
+// ============================================================
+// DRILL LOGIC
+// ============================================================
+function getPool() {
+  const incDakuten = document.getElementById('incDakuten').checked;
+  const incYoon    = document.getElementById('incYoon').checked;
+
+  let pool = {};
+  if (mode === 'hiragana' || mode === 'both') {
+    Object.assign(pool, HIRAGANA_BASE);
+    if (incDakuten) Object.assign(pool, HIRAGANA_DAKUTEN);
+    if (incYoon)    Object.assign(pool, HIRAGANA_YOON);
+  }
+  if (mode === 'katakana' || mode === 'both') {
+    Object.assign(pool, KATAKANA_BASE);
+    if (incDakuten) Object.assign(pool, KATAKANA_DAKUTEN);
+    if (incYoon)    Object.assign(pool, KATAKANA_YOON);
+  }
+  return pool;
+}
+
+function pickRandom() {
+  const pool = getPool();
+  const keys = Object.keys(pool);
+  let next;
+  do { next = keys[Math.floor(Math.random() * keys.length)]; } while (next === currentKana && keys.length > 1);
+  currentKana = next;
+  currentAnswer = pool[next];
+}
+
+function showCard() {
+  pickRandom();
+  kanaEl.textContent = currentKana;
+  feedbackEl.textContent = '';
+  inputEl.value = '';
+  hintShown = false;
+  hintUsedThisRound = false;
+  hintBtn.style.display = '';
+  hintContent.classList.remove('visible');
+  inputEl.focus();
+}
+
+function revealHint() {
+  if (hintShown) return;
+  hintShown = true;
+  hintUsedThisRound = true;
+  hintBtn.style.display = 'none';
+  hintRomaji.textContent = currentAnswer;
+  hintMnemonic.textContent = getMnemonic(currentKana, currentAnswer);
+  hintContent.classList.add('visible');
+  inputEl.focus();
+}
+
+function flash(type) {
+  cardEl.classList.remove('correct', 'wrong');
+  void cardEl.offsetWidth;
+  cardEl.classList.add(type);
+  setTimeout(() => cardEl.classList.remove(type), 600);
+}
+
+function updateStats() {
+  scoreEl.textContent = `${correct} / ${total}`;
+  streakEl.textContent = streak;
+}
+
+function submit() {
+  if (locked) return;
+  const guess = inputEl.value.trim().toLowerCase();
+  if (!guess) return;
+
+  total++;
+
+  if (guess === currentAnswer) {
+    correct++;
+    streak++;
+    flash('correct');
+    updateStats();
+    showCard();
+  } else {
+    streak = 0;
+    flash('wrong');
+    feedbackEl.textContent = `${currentKana} = ${currentAnswer}`;
+    // Also show the mnemonic on wrong answer so they learn
+    hintBtn.style.display = 'none';
+    hintRomaji.textContent = currentAnswer;
+    hintMnemonic.textContent = getMnemonic(currentKana, currentAnswer);
+    hintContent.classList.add('visible');
+    updateStats();
+    locked = true;
+    setTimeout(() => { locked = false; showCard(); }, 2000);
+  }
+}
+
+// ============================================================
+// STUDY VIEW
+// ============================================================
+function buildStudyView() {
+  const incDakuten = document.getElementById('incDakuten').checked;
+  const incYoon    = document.getElementById('incYoon').checked;
+
+  function makeSections(prefix, base, dakuten, yoon) {
+    const s = [[`${prefix} — Base (Gojūon)`, base]];
+    if (incDakuten) s.push([`${prefix} — Dakuten & Handakuten`, dakuten]);
+    if (incYoon)    s.push([`${prefix} — Combinations (Yōon)`, yoon]);
+    return s;
+  }
+
+  let sections;
+  if (mode === 'hiragana') {
+    sections = makeSections('Hiragana', HIRAGANA_BASE, HIRAGANA_DAKUTEN, HIRAGANA_YOON);
+  } else if (mode === 'katakana') {
+    sections = makeSections('Katakana', KATAKANA_BASE, KATAKANA_DAKUTEN, KATAKANA_YOON);
+  } else {
+    sections = [
+      ...makeSections('Hiragana', HIRAGANA_BASE, HIRAGANA_DAKUTEN, HIRAGANA_YOON),
+      ...makeSections('Katakana', KATAKANA_BASE, KATAKANA_DAKUTEN, KATAKANA_YOON),
+    ];
+  }
+
+  studyContent.innerHTML = '';
+  studyDetail.classList.remove('visible');
+
+  for (const [title, data] of sections) {
+    const sec = document.createElement('div');
+    sec.className = 'study-section';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = title;
+    sec.appendChild(h2);
+
+    const grid = document.createElement('div');
+    grid.className = 'study-grid';
+
+    for (const [kana, romaji] of Object.entries(data)) {
+      const card = document.createElement('div');
+      card.className = 'study-card';
+      card.innerHTML = `
+        <div class="sc-kana">${kana}</div>
+        <div class="sc-romaji">${romaji}</div>
+        <div class="sc-mnemonic">${getMnemonic(kana, romaji)}</div>
+      `;
+      card.addEventListener('click', () => openStudyDetail(kana, romaji));
+      grid.appendChild(card);
+    }
+
+    sec.appendChild(grid);
+    studyContent.appendChild(sec);
+  }
+}
+
+function openStudyDetail(kana, romaji) {
+  document.getElementById('sdKana').textContent = kana;
+  document.getElementById('sdRomaji').textContent = romaji;
+  document.getElementById('sdMnemonic').textContent = getMnemonic(kana, romaji);
+  studyDetail.classList.add('visible');
+  studyDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('sdClose').addEventListener('click', () => {
+  studyDetail.classList.remove('visible');
+});
+
+// ============================================================
+// EVENT HANDLERS
+// ============================================================
+
+// Hint button click
+hintBtn.addEventListener('click', revealHint);
+
+// Keyboard
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    submit();
+  } else if (e.key === ' ' && inputEl.value === '') {
+    e.preventDefault();
+    revealHint();
+  }
+});
+
+// Mode toggle
+document.querySelectorAll('.modes button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('.modes .active').classList.remove('active');
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    correct = 0; total = 0; streak = 0;
+    updateStats();
+    showCard();
+    if (view === 'study') buildStudyView();
+  });
+});
+
+// Include checkboxes
+document.querySelectorAll('.includes input').forEach(cb => {
+  cb.addEventListener('change', () => {
+    correct = 0; total = 0; streak = 0;
+    updateStats();
+    showCard();
+    if (view === 'study') buildStudyView();
+  });
+});
+
+// View toggle (Drill / Study)
+document.querySelectorAll('.view-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('.view-toggle .active').classList.remove('active');
+    btn.classList.add('active');
+    view = btn.dataset.view;
+    if (view === 'drill') {
+      drillView.classList.remove('hidden');
+      studyView.classList.add('hidden');
+      inputEl.focus();
+    } else {
+      drillView.classList.add('hidden');
+      studyView.classList.remove('hidden');
+      buildStudyView();
+    }
+  });
+});
+
+// ============================================================
+// CHEATSHEET
+// ============================================================
+const cheatModal = document.getElementById('cheatModal');
+const cheatBody  = document.getElementById('cheatBody');
+
+function buildCheatsheet() {
+  // Pair up hiragana and katakana by romaji
+  const sections = [
+    ['Base (Gojūon)', HIRAGANA_BASE, KATAKANA_BASE],
+    ['Dakuten & Handakuten', HIRAGANA_DAKUTEN, KATAKANA_DAKUTEN],
+    ['Combinations (Yōon)', HIRAGANA_YOON, KATAKANA_YOON],
+  ];
+
+  let html = '';
+  for (const [title, hiraSet, kataSet] of sections) {
+    html += `<div class="cheat-section-title">${title}</div>`;
+    html += `<table class="cheat-table"><tr><th>Romaji</th><th>Hiragana</th><th>Katakana</th></tr>`;
+
+    // Build a romaji → {hira, kata} map preserving hiragana key order
+    const rows = [];
+    const seen = new Set();
+    for (const [kana, romaji] of Object.entries(hiraSet)) {
+      if (!seen.has(romaji)) {
+        seen.add(romaji);
+        rows.push({ romaji, hira: kana });
+      }
+    }
+    for (const [kana, romaji] of Object.entries(kataSet)) {
+      const row = rows.find(r => r.romaji === romaji);
+      if (row) row.kata = kana;
+    }
+
+    for (const r of rows) {
+      html += `<tr>
+        <td class="ct-romaji">${r.romaji}</td>
+        <td class="ct-hira">${r.hira || ''}</td>
+        <td class="ct-kata">${r.kata || ''}</td>
+      </tr>`;
+    }
+    html += `</table>`;
+  }
+  cheatBody.innerHTML = html;
+}
+
+function openCheatsheet() {
+  buildCheatsheet();
+  cheatModal.classList.add('visible');
+}
+
+function closeCheatsheet() {
+  cheatModal.classList.remove('visible');
+  if (view === 'drill') inputEl.focus();
+}
+
+document.getElementById('cheatsheetBtn').addEventListener('click', openCheatsheet);
+document.getElementById('cheatClose').addEventListener('click', closeCheatsheet);
+cheatModal.addEventListener('click', e => { if (e.target === cheatModal) closeCheatsheet(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && cheatModal.classList.contains('visible')) closeCheatsheet();
+});
+
+// Start
+showCard();
+</script>
+</body>
+</html>
