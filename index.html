@@ -92,7 +92,7 @@
 
   /* ====== DRILL VIEW ====== */
   .drill-view { display: block; }
-  .drill-view.hidden, .study-view.hidden { display: none; }
+  .drill-view.hidden, .study-view.hidden, .lesson-view.hidden { display: none; }
 
   .card {
     background: #16213e;
@@ -310,6 +310,99 @@
 
   .study-detail .sd-close:hover { border-color: #6c63ff; color: #d0d0e8; }
 
+  /* ====== LESSON VIEW ====== */
+  .lesson-header { margin-bottom: 1rem; }
+  .lesson-kicker {
+    font-size: 0.75rem;
+    color: #4ecca3;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+  .lesson-title { font-size: 1.25rem; color: #f0f0f0; margin-bottom: 0.25rem; }
+  .lesson-progress { font-size: 0.8rem; color: #8888aa; }
+  .lesson-section-label {
+    font-size: 0.75rem;
+    color: #8888aa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 1.1rem 0 0.5rem;
+    text-align: left;
+  }
+  .lesson-word {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    background: #16213e;
+    border-radius: 10px;
+    padding: 0.55rem 0.8rem;
+    margin-bottom: 0.45rem;
+    cursor: pointer;
+    text-align: left;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .lesson-word:hover { border-color: #6c63ff; }
+  .lesson-word .lw-kana {
+    font-size: 1.5rem;
+    font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic", "Noto Sans JP", sans-serif;
+    min-width: 5.5rem;
+  }
+  .lesson-word .lw-romaji { font-size: 0.85rem; color: #f0c040; font-weight: 600; }
+  .lesson-word .lw-meaning { font-size: 0.85rem; color: #a0a0c0; margin-left: auto; text-align: right; }
+  .lesson-actions, .lesson-nav {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    margin-top: 1.1rem;
+    flex-wrap: wrap;
+  }
+  .lesson-btn {
+    padding: 0.5rem 1.1rem;
+    border: 2px solid #3a3a5c;
+    border-radius: 8px;
+    background: transparent;
+    color: #b0b0c8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .lesson-btn:hover { border-color: #6c63ff; color: #d0d0e8; }
+  .lesson-btn.primary { background: #4ecca3; border-color: #4ecca3; color: #111; font-weight: 700; }
+  .lesson-btn.primary:hover { background: #3fb98f; border-color: #3fb98f; color: #111; }
+  .lesson-btn.secondary { opacity: 0.75; }
+  .lesson-btn:disabled { opacity: 0.3; cursor: default; }
+  .lesson-btn:disabled:hover { border-color: #3a3a5c; color: #b0b0c8; }
+
+  /* Lesson-scoped drill banner */
+  .lesson-drill-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    background: #16213e;
+    border: 1px solid #4ecca3;
+    border-radius: 8px;
+    padding: 0.35rem 0.7rem;
+    margin-bottom: 0.7rem;
+    font-size: 0.8rem;
+    color: #4ecca3;
+  }
+  .lesson-drill-banner.hidden { display: none; }
+  .lesson-drill-banner button {
+    background: transparent;
+    border: none;
+    color: #8888aa;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.1rem 0.35rem;
+  }
+  .lesson-drill-banner button:hover { color: #e0e0e0; }
+
+  /* Cheatsheet: not-yet-learned kana */
+  .ct-locked { opacity: 0.22; }
+
   /* ====== CHEATSHEET MODAL ====== */
   .cheatsheet-btn {
     position: fixed;
@@ -518,10 +611,15 @@
   <div class="view-toggle">
     <button class="active" data-view="drill">Drill</button>
     <button data-view="study">Study</button>
+    <button data-view="lesson">Lesson</button>
   </div>
 
   <!-- DRILL VIEW -->
   <div class="drill-view" id="drillView">
+    <div id="lessonDrillBanner" class="lesson-drill-banner hidden">
+      <span id="lessonDrillLabel">Lesson drill</span>
+      <button id="lessonDrillExit" title="Back to full drill">✕</button>
+    </div>
     <div class="card" id="card">
       <div class="kana" id="kana"></div>
       <div class="feedback" id="feedback"></div>
@@ -554,6 +652,27 @@
       <button class="sd-close" id="sdClose">Close</button>
     </div>
     <div id="studyContent"></div>
+  </div>
+
+  <!-- LESSON VIEW -->
+  <div class="lesson-view hidden" id="lessonView">
+    <div class="lesson-header">
+      <div class="lesson-kicker" id="lessonKicker"></div>
+      <h2 class="lesson-title" id="lessonTitle"></h2>
+      <div class="lesson-progress" id="lessonProgress"></div>
+    </div>
+    <div class="lesson-section-label">New characters</div>
+    <div class="study-grid" id="lessonCharGrid"></div>
+    <div class="lesson-section-label">Practice words</div>
+    <div id="lessonWordList"></div>
+    <div class="lesson-actions">
+      <button class="lesson-btn" id="lessonDrillBtn">Drill this lesson</button>
+      <button class="lesson-btn" id="lessonReviewBtn">Review all learned</button>
+    </div>
+    <div class="lesson-nav">
+      <button class="lesson-btn secondary" id="lessonPrevBtn">← Prev</button>
+      <button class="lesson-btn primary" id="lessonNextBtn">Mark complete &amp; next →</button>
+    </div>
   </div>
 </div>
 
@@ -771,6 +890,15 @@ const KATAKANA_YOON = {
 };
 
 // ============================================================
+// LESSON CURRICULUM
+// 24 guided lessons: hiragana vowels->rows, katakana vowels->rows,
+// dakuten/handakuten, then yoon. Order matches the daily chat lessons.
+// Each lesson's practice words use only kana from lessons up to and
+// including the current one.
+// ============================================================
+const LESSONS = [{"chars":["あ","い","う","え","お"],"n":1,"script":"hiragana","title":"Hiragana vowels","words":[{"k":"あおい","m":"blue","r":"aoi"},{"k":"いいえ","m":"no","r":"iie"},{"k":"うえ","m":"above; on top","r":"ue"},{"k":"あう","m":"to meet","r":"au"}]},{"chars":["か","き","く","け","こ"],"n":2,"script":"hiragana","title":"Hiragana K row","words":[{"k":"かき","m":"persimmon","r":"kaki"},{"k":"きく","m":"to listen; chrysanthemum","r":"kiku"},{"k":"ここ","m":"here","r":"koko"},{"k":"かお","m":"face","r":"kao"},{"k":"いけ","m":"pond","r":"ike"}]},{"chars":["さ","し","す","せ","そ"],"n":3,"script":"hiragana","title":"Hiragana S row","words":[{"k":"すし","m":"sushi","r":"sushi"},{"k":"さけ","m":"sake; salmon","r":"sake"},{"k":"あさ","m":"morning","r":"asa"},{"k":"そこ","m":"there","r":"soko"}]},{"chars":["た","ち","つ","て","と"],"n":4,"script":"hiragana","title":"Hiragana T row","words":[{"k":"とけい","m":"clock; watch","r":"tokei"},{"k":"つき","m":"moon","r":"tsuki"},{"k":"さとう","m":"sugar","r":"satou"},{"k":"て","m":"hand","r":"te"},{"k":"たこ","m":"octopus","r":"tako"}]},{"chars":["な","に","ぬ","ね","の"],"n":5,"script":"hiragana","title":"Hiragana N row","words":[{"k":"いぬ","m":"dog","r":"inu"},{"k":"ねこ","m":"cat","r":"neko"},{"k":"なつ","m":"summer","r":"natsu"},{"k":"なに","m":"what","r":"nani"},{"k":"この","m":"this (one)","r":"kono"}]},{"chars":["は","ひ","ふ","へ","ほ"],"n":6,"script":"hiragana","title":"Hiragana H row","words":[{"k":"はな","m":"flower; nose","r":"hana"},{"k":"ひ","m":"sun; day","r":"hi"},{"k":"ふね","m":"boat","r":"fune"},{"k":"へや","m":"room","r":"heya"},{"k":"ほし","m":"star","r":"hoshi"}]},{"chars":["ま","み","む","め","も"],"n":7,"script":"hiragana","title":"Hiragana M row","words":[{"k":"みみ","m":"ear","r":"mimi"},{"k":"むし","m":"insect","r":"mushi"},{"k":"もも","m":"peach","r":"momo"},{"k":"うみ","m":"sea","r":"umi"},{"k":"あめ","m":"rain; candy","r":"ame"}]},{"chars":["や","ゆ","よ"],"n":8,"script":"hiragana","title":"Hiragana Y row","words":[{"k":"やま","m":"mountain","r":"yama"},{"k":"ゆき","m":"snow","r":"yuki"},{"k":"よる","m":"night","r":"yoru"},{"k":"やすみ","m":"rest; holiday","r":"yasumi"}]},{"chars":["ら","り","る","れ","ろ"],"n":9,"script":"hiragana","title":"Hiragana R row","words":[{"k":"さくら","m":"cherry blossom","r":"sakura"},{"k":"そら","m":"sky","r":"sora"},{"k":"くるま","m":"car","r":"kuruma"},{"k":"これ","m":"this one","r":"kore"},{"k":"みる","m":"to see","r":"miru"}]},{"chars":["わ","を","ん"],"n":10,"script":"hiragana","title":"Hiragana W row + ん","words":[{"k":"わに","m":"crocodile","r":"wani"},{"k":"ほん","m":"book","r":"hon"},{"k":"ほんをよむ","m":"to read a book","r":"hon o yomu"},{"k":"おんな","m":"woman","r":"onna"},{"k":"わんわん","m":"bow-wow","r":"wanwan"}]},{"chars":["ア","イ","ウ","エ","オ"],"n":11,"script":"katakana","title":"Katakana vowels","words":[{"k":"アイ","m":"eye","r":"ai"},{"k":"エア","m":"air","r":"ea"}]},{"chars":["カ","キ","ク","ケ","コ"],"n":12,"script":"katakana","title":"Katakana K row","words":[{"k":"ケーキ","m":"cake","r":"keeki"},{"k":"キウイ","m":"kiwi","r":"kiui"},{"k":"ココア","m":"cocoa","r":"kokoa"},{"k":"カキ","m":"khaki (color)","r":"kaki"}]},{"chars":["サ","シ","ス","セ","ソ"],"n":13,"script":"katakana","title":"Katakana S row","words":[{"k":"スシ","m":"sushi","r":"sushi"},{"k":"ソース","m":"sauce","r":"soosu"},{"k":"セーター","m":"sweater","r":"seetaa"}]},{"chars":["タ","チ","ツ","テ","ト"],"n":14,"script":"katakana","title":"Katakana T row","words":[{"k":"タクシー","m":"taxi","r":"takushii"},{"k":"チーズ","m":"cheese","r":"chiizu"},{"k":"トマト","m":"tomato","r":"tomato"}]},{"chars":["ナ","ニ","ヌ","ネ","ノ"],"n":15,"script":"katakana","title":"Katakana N row","words":[{"k":"ナイフ","m":"knife","r":"naifu"},{"k":"ノート","m":"notebook","r":"nooto"}]},{"chars":["ハ","ヒ","フ","ヘ","ホ"],"n":16,"script":"katakana","title":"Katakana H row","words":[{"k":"ホテル","m":"hotel","r":"hoteru"},{"k":"ヒーター","m":"heater","r":"hiitaa"},{"k":"ハム","m":"ham","r":"hamu"}]},{"chars":["マ","ミ","ム","メ","モ"],"n":17,"script":"katakana","title":"Katakana M row","words":[{"k":"メモ","m":"memo","r":"memo"},{"k":"ミルク","m":"milk","r":"miruku"},{"k":"ママ","m":"mama","r":"mama"}]},{"chars":["ヤ","ユ","ヨ"],"n":18,"script":"katakana","title":"Katakana Y row","words":[{"k":"ヨーヨー","m":"yo-yo","r":"yooyoo"},{"k":"ユーモア","m":"humor","r":"yuumoa"}]},{"chars":["ラ","リ","ル","レ","ロ"],"n":19,"script":"katakana","title":"Katakana R row","words":[{"k":"ライオン","m":"lion","r":"raion"},{"k":"ルール","m":"rule","r":"ruuru"},{"k":"ローマ","m":"Rome","r":"rooma"}]},{"chars":["ワ","ヲ","ン"],"n":20,"script":"katakana","title":"Katakana W row + ン","words":[{"k":"ワイン","m":"wine","r":"wain"},{"k":"ワクチン","m":"vaccine","r":"wakuchin"},{"k":"オン","m":"on","r":"on"}]},{"chars":["が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ"],"n":21,"script":"hiragana","title":"Dakuten: G and Z rows","words":[{"k":"かぎ","m":"key","r":"kagi"},{"k":"みず","m":"water","r":"mizu"},{"k":"かぜ","m":"wind","r":"kaze"},{"k":"じかん","m":"time","r":"jikan"}]},{"chars":["だ","ぢ","づ","で","ど","ば","び","ぶ","べ","ぼ"],"n":22,"script":"hiragana","title":"Dakuten: D and B rows","words":[{"k":"だれ","m":"who","r":"dare"},{"k":"どこ","m":"where","r":"doko"},{"k":"ばん","m":"evening","r":"ban"},{"k":"びょういん","m":"hospital","r":"byouin"}]},{"chars":["ぱ","ぴ","ぷ","ぺ","ぽ"],"n":23,"script":"hiragana","title":"Handakuten: P row","words":[{"k":"パン","m":"bread","r":"pan"},{"k":"スポーツ","m":"sports","r":"supootsu"},{"k":"ピカピカ","m":"glittering; sparkling","r":"pikapika"}]},{"chars":["きゃ","きゅ","きょ","しゃ","しゅ","しょ","ちゃ","ちゅ","ちょ","にゃ","にゅ","にょ","ひゃ","ひゅ","ひょ","みゃ","みゅ","みょ","りゃ","りゅ","りょ"],"n":24,"script":"hiragana","title":"Yōon combinations","words":[{"k":"きょう","m":"today","r":"kyou"},{"k":"しゃしん","m":"photo","r":"shashin"},{"k":"りょこう","m":"travel","r":"ryokou"},{"k":"ジュース","m":"juice","r":"juusu"}]}];
+
+// ============================================================
 // APP STATE
 // ============================================================
 let mode = 'hiragana';
@@ -783,6 +911,13 @@ let currentAnswer = '';
 let locked = false;
 let hintShown = false;
 let hintUsedThisRound = false;
+
+// Lesson mode: guided curriculum progress, persisted in localStorage.
+let lessonIndex = Math.min(Math.max(parseInt(localStorage.getItem('kanaDojoLesson') || '0', 10) || 0, 0), LESSONS.length - 1);
+let viewedLesson = lessonIndex;
+// When set, the drill draws from this kana->romaji pool instead of the
+// mode/checkbox pool (lesson-scoped or cumulative-review drills).
+let drillPoolOverride = null;
 
 // Per-kana score: positive = strong, negative = weak. Persisted in localStorage.
 let kanaScores = JSON.parse(localStorage.getItem('kanaScores') || '{}');
@@ -814,11 +949,24 @@ const drillView    = document.getElementById('drillView');
 const studyView    = document.getElementById('studyView');
 const studyContent = document.getElementById('studyContent');
 const studyDetail  = document.getElementById('studyDetail');
+const lessonView       = document.getElementById('lessonView');
+const lessonKicker     = document.getElementById('lessonKicker');
+const lessonTitle      = document.getElementById('lessonTitle');
+const lessonProgress   = document.getElementById('lessonProgress');
+const lessonCharGrid   = document.getElementById('lessonCharGrid');
+const lessonWordList   = document.getElementById('lessonWordList');
+const lessonPrevBtn    = document.getElementById('lessonPrevBtn');
+const lessonNextBtn    = document.getElementById('lessonNextBtn');
+const lessonDrillBtn   = document.getElementById('lessonDrillBtn');
+const lessonReviewBtn  = document.getElementById('lessonReviewBtn');
+const lessonDrillBanner = document.getElementById('lessonDrillBanner');
+const lessonDrillLabel  = document.getElementById('lessonDrillLabel');
 
 // ============================================================
 // DRILL LOGIC
 // ============================================================
 function getPool() {
+  if (drillPoolOverride) return drillPoolOverride;
   const incDakuten = document.getElementById('incDakuten').checked;
   const incYoon    = document.getElementById('incYoon').checked;
 
@@ -1047,6 +1195,131 @@ document.getElementById('sdClose').addEventListener('click', () => {
 });
 
 // ============================================================
+// LESSON MODE
+// ============================================================
+const KANA_MAPS = [HIRAGANA_BASE, HIRAGANA_DAKUTEN, HIRAGANA_YOON,
+                   KATAKANA_BASE, KATAKANA_DAKUTEN, KATAKANA_YOON];
+
+function romajiFor(kana) {
+  for (const m of KANA_MAPS) if (m[kana]) return m[kana];
+  return '';
+}
+
+// Every kana introduced in lessons 0..lessonIndex.
+function learnedSet() {
+  const s = new Set();
+  for (let i = 0; i <= lessonIndex; i++) {
+    for (const k of LESSONS[i].chars) s.add(k);
+  }
+  return s;
+}
+
+function saveLessonIndex() {
+  localStorage.setItem('kanaDojoLesson', String(lessonIndex));
+}
+
+function buildLessonView() {
+  const lesson = LESSONS[viewedLesson];
+  lessonKicker.textContent = `Lesson ${lesson.n} of ${LESSONS.length}`;
+  lessonTitle.textContent = lesson.title;
+  if (lessonIndex >= LESSONS.length - 1) {
+    lessonProgress.textContent = 'Curriculum complete — review mode';
+  } else {
+    const remaining = LESSONS.length - 1 - lessonIndex;
+    lessonProgress.textContent = `${remaining} lesson${remaining === 1 ? '' : 's'} to go after this one`;
+  }
+
+  lessonCharGrid.innerHTML = '';
+  for (const kana of lesson.chars) {
+    const romaji = romajiFor(kana);
+    const card = document.createElement('div');
+    card.className = 'study-card';
+    card.innerHTML = `
+      <div class="sc-kana">${kana}</div>
+      <div class="sc-romaji">${romaji}</div>
+      <div class="sc-mnemonic">${getMnemonic(kana, romaji)}</div>
+    `;
+    card.addEventListener('click', () => speakKana(kana));
+    lessonCharGrid.appendChild(card);
+  }
+
+  lessonWordList.innerHTML = '';
+  for (const w of lesson.words) {
+    const row = document.createElement('div');
+    row.className = 'lesson-word';
+    row.innerHTML = `
+      <div class="lw-kana">${w.k}</div>
+      <div class="lw-romaji">${w.r}</div>
+      <div class="lw-meaning">${w.m}</div>
+    `;
+    row.addEventListener('click', () => speakKana(w.k));
+    lessonWordList.appendChild(row);
+  }
+
+  lessonPrevBtn.disabled = viewedLesson === 0;
+  const done = viewedLesson >= LESSONS.length - 1;
+  lessonNextBtn.disabled = done;
+  lessonNextBtn.textContent = done ? 'Curriculum complete' : 'Mark complete & next →';
+}
+
+function setView(next) {
+  document.querySelector('.view-toggle .active').classList.remove('active');
+  document.querySelector(`.view-toggle button[data-view="${next}"]`).classList.add('active');
+  view = next;
+  drillView.classList.toggle('hidden', view !== 'drill');
+  studyView.classList.toggle('hidden', view !== 'study');
+  lessonView.classList.toggle('hidden', view !== 'lesson');
+  if (view === 'drill') inputEl.focus();
+  else if (view === 'study') buildStudyView();
+  else if (view === 'lesson') buildLessonView();
+}
+
+function startLessonDrill(chars, label) {
+  const pool = {};
+  for (const kana of chars) {
+    const r = romajiFor(kana);
+    if (r) pool[kana] = r;
+  }
+  drillPoolOverride = pool;
+  lessonDrillLabel.textContent = label;
+  lessonDrillBanner.classList.remove('hidden');
+  correct = 0; total = 0; streak = 0;
+  updateStats();
+  setView('drill');
+  showCard();
+}
+
+function clearLessonDrill() {
+  drillPoolOverride = null;
+  lessonDrillBanner.classList.add('hidden');
+}
+
+lessonPrevBtn.addEventListener('click', () => {
+  if (viewedLesson > 0) { viewedLesson--; buildLessonView(); }
+});
+
+lessonNextBtn.addEventListener('click', () => {
+  lessonIndex = Math.min(Math.max(lessonIndex, viewedLesson + 1), LESSONS.length - 1);
+  viewedLesson = lessonIndex;
+  saveLessonIndex();
+  buildLessonView();
+});
+
+lessonDrillBtn.addEventListener('click', () => {
+  const lesson = LESSONS[viewedLesson];
+  startLessonDrill(lesson.chars, `Lesson ${lesson.n} drill — ${lesson.title}`);
+});
+
+lessonReviewBtn.addEventListener('click', () => {
+  startLessonDrill([...learnedSet()], 'Review — all learned kana');
+});
+
+document.getElementById('lessonDrillExit').addEventListener('click', () => {
+  clearLessonDrill();
+  showCard();
+});
+
+// ============================================================
 // EVENT HANDLERS
 // ============================================================
 
@@ -1073,6 +1346,7 @@ document.querySelectorAll('.modes button').forEach(btn => {
     btn.classList.add('active');
     mode = btn.dataset.mode;
     correct = 0; total = 0; streak = 0;
+    clearLessonDrill();
     updateStats();
     showCard();
     if (view === 'study') buildStudyView();
@@ -1083,28 +1357,16 @@ document.querySelectorAll('.modes button').forEach(btn => {
 document.querySelectorAll('.includes input').forEach(cb => {
   cb.addEventListener('change', () => {
     correct = 0; total = 0; streak = 0;
+    clearLessonDrill();
     updateStats();
     showCard();
     if (view === 'study') buildStudyView();
   });
 });
 
-// View toggle (Drill / Study)
+// View toggle (Drill / Study / Lesson)
 document.querySelectorAll('.view-toggle button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelector('.view-toggle .active').classList.remove('active');
-    btn.classList.add('active');
-    view = btn.dataset.view;
-    if (view === 'drill') {
-      drillView.classList.remove('hidden');
-      studyView.classList.add('hidden');
-      inputEl.focus();
-    } else {
-      drillView.classList.add('hidden');
-      studyView.classList.remove('hidden');
-      buildStudyView();
-    }
-  });
+  btn.addEventListener('click', () => setView(btn.dataset.view));
 });
 
 // ============================================================
@@ -1120,6 +1382,9 @@ function buildCheatsheet() {
     ['Dakuten & Handakuten', HIRAGANA_DAKUTEN, KATAKANA_DAKUTEN],
     ['Combinations (Yōon)', HIRAGANA_YOON, KATAKANA_YOON],
   ];
+
+  // Dim kana not yet introduced by the lesson curriculum.
+  const learned = learnedSet();
 
   let html = '';
   for (const [title, hiraSet, kataSet] of sections) {
@@ -1141,10 +1406,12 @@ function buildCheatsheet() {
     }
 
     for (const r of rows) {
+      const hiraCls = (r.hira && !learned.has(r.hira)) ? 'ct-hira ct-locked' : 'ct-hira';
+      const kataCls = (r.kata && !learned.has(r.kata)) ? 'ct-kata ct-locked' : 'ct-kata';
       html += `<tr>
         <td class="ct-romaji">${r.romaji}</td>
-        <td class="ct-hira">${r.hira || ''}</td>
-        <td class="ct-kata">${r.kata || ''}</td>
+        <td class="${hiraCls}">${r.hira || ''}</td>
+        <td class="${kataCls}">${r.kata || ''}</td>
       </tr>`;
     }
     html += `</table>`;
